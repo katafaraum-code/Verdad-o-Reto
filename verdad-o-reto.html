@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#140a12">
+<title>Verdad o Reto · Juego íntimo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#140a12; --bg2:#1d0f1a;
+    --surface:rgba(44,24,38,.55); --surface-2:rgba(58,32,50,.7);
+    --line:rgba(230,184,115,.16);
+    --ink:#f5ebf1; --muted:#bb9aac; --muted-2:#876578;
+    --jade:#62d5b4; --jade-soft:#9fe9d4; --jade-glow:rgba(98,213,180,.35);
+    --ember:#ff738c; --ember-soft:#ffa9b8; --ember-glow:rgba(255,115,140,.34);
+    --gold:#e6b873;
+    --radius:26px; --shadow:0 30px 80px -30px rgba(0,0,0,.8);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+    min-height:100dvh;overflow-x:hidden;position:relative;display:flex;flex-direction:column;
+    -webkit-font-smoothing:antialiased}
+  .ambient{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .ambient::before,.ambient::after{content:"";position:absolute;width:70vmax;height:70vmax;
+    border-radius:50%;filter:blur(60px);opacity:.5}
+  .ambient::before{background:radial-gradient(circle,var(--ember-glow),transparent 65%);
+    top:-22vmax;right:-18vmax;animation:drift1 22s ease-in-out infinite alternate}
+  .ambient::after{background:radial-gradient(circle,var(--jade-glow),transparent 65%);
+    bottom:-26vmax;left:-20vmax;animation:drift2 26s ease-in-out infinite alternate}
+  @keyframes drift1{from{transform:translate(0,0) scale(1)}to{transform:translate(-6vmax,6vmax) scale(1.12)}}
+  @keyframes drift2{from{transform:translate(0,0) scale(1.05)}to{transform:translate(7vmax,-5vmax) scale(.95)}}
+
+  .stage{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;width:100%;
+    max-width:520px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 22px 26px}
+  .screen{display:none;flex:1;flex-direction:column;animation:fade .5s ease both}
+  .screen.active{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- SETUP ---------- */
+  .brand{text-align:center;padding:10px 0 4px}
+  .brand .eyebrow{font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);
+    font-weight:600;margin-bottom:12px;opacity:.85}
+  .brand h1{font-family:'Cormorant Garamond',serif;font-weight:500;line-height:.95;
+    font-size:clamp(46px,15vw,66px);letter-spacing:-.01em}
+  .brand h1 em{font-style:italic;color:var(--ember-soft)}
+  .brand h1 .y{display:block;font-size:.42em;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--muted);margin:6px 0;font-family:'Manrope',sans-serif;font-weight:600}
+  .brand h1 .j{color:var(--jade-soft)}
+  .tagline{color:var(--muted);font-size:14px;margin-top:14px;line-height:1.5;max-width:330px;
+    margin-left:auto;margin-right:auto}
+
+  .panel{margin-top:22px;display:flex;flex-direction:column;gap:20px}
+  .field-label{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-2);
+    font-weight:600;margin-bottom:11px;display:block}
+
+  .seg{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);
+    border-radius:18px;padding:6px;backdrop-filter:blur(12px)}
+  .seg button{flex:1;border:0;background:transparent;color:var(--muted);font-family:inherit;
+    font-size:13.5px;font-weight:600;padding:12px 6px;border-radius:13px;cursor:pointer;
+    transition:.3s;letter-spacing:.01em}
+  .seg button .sub{display:block;font-size:10.5px;font-weight:500;opacity:.7;margin-top:2px}
+  .seg button.on{background:linear-gradient(140deg,var(--surface-2),rgba(255,115,140,.12));
+    color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+
+  .names{display:flex;flex-direction:column;gap:11px}
+  .name-row{display:flex;align-items:center;gap:12px;background:var(--surface);
+    border:1px solid var(--line);border-radius:16px;padding:6px 8px 6px 16px;backdrop-filter:blur(12px)}
+  .name-row .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .name-row input{flex:1;border:0;background:transparent;color:var(--ink);font-family:inherit;
+    font-size:16px;padding:13px 0;outline:none;min-width:0}
+  .name-row input::placeholder{color:var(--muted-2)}
+  .gender{display:flex;gap:5px;flex-shrink:0}
+  .gbtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(255,255,255,.02);color:var(--muted-2);font-size:18px;cursor:pointer;
+    transition:.22s;display:grid;place-items:center;line-height:1}
+  .gbtn.h.on{color:#bfe0ff;border-color:rgba(140,190,255,.55);background:rgba(140,190,255,.12)}
+  .gbtn.m.on{color:var(--ember-soft);border-color:rgba(255,140,165,.55);background:rgba(255,140,165,.12)}
+
+  .chips{display:flex;gap:9px}
+  .chip{flex:1;border:1px solid var(--line);background:var(--surface);color:var(--muted);
+    border-radius:16px;padding:14px 6px;cursor:pointer;transition:.28s;text-align:center;backdrop-filter:blur(12px)}
+  .chip .lv{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:600;display:block;line-height:1}
+  .chip .dsc{font-size:10.5px;color:var(--muted-2);margin-top:5px;letter-spacing:.04em}
+  .chip[data-on="1"]{color:var(--ink);border-color:transparent;
+    box-shadow:0 0 0 1.5px var(--accent,var(--gold)),0 12px 30px -14px var(--accentglow,transparent)}
+  .chip[data-on="1"] .dsc{color:var(--muted)}
+  .chip.c1{--accent:#9fe9d4;--accentglow:var(--jade-glow)}
+  .chip.c2{--accent:var(--gold);--accentglow:rgba(230,184,115,.3)}
+  .chip.c3{--accent:var(--ember);--accentglow:var(--ember-glow)}
+
+  .cta{margin-top:6px;border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:16px;
+    letter-spacing:.04em;color:#1a0c14;padding:19px;border-radius:18px;
+    background:linear-gradient(120deg,var(--jade-soft),var(--gold) 55%,var(--ember-soft));
+    box-shadow:0 20px 45px -18px var(--ember-glow);transition:transform .15s,box-shadow .3s}
+  .cta:active{transform:scale(.98)}
+  .cta:disabled{opacity:.45;box-shadow:none;cursor:not-allowed}
+  .hint{text-align:center;font-size:12px;color:var(--muted-2);margin-top:2px}
+  .rules{margin-top:6px;display:flex;flex-direction:column;gap:9px;background:var(--surface);
+    border:1px solid var(--line);border-radius:16px;padding:15px 16px;backdrop-filter:blur(12px)}
+  .rules span{font-size:13px;color:var(--muted);line-height:1.45}
+  .rules b{color:var(--ink);font-weight:700}
+
+  /* ---------- GAME shell ---------- */
+  .gtop{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 14px}
+  .gtitle{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600}
+  .gtitle .j{color:var(--jade-soft)} .gtitle .e{color:var(--ember-soft);font-style:italic}
+  .scoreboard{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{position:relative;overflow:hidden;font-size:12px;color:var(--muted);background:var(--surface);
+    border:1px solid var(--line);padding:6px 10px;border-radius:11px;display:flex;align-items:center;
+    gap:6px;backdrop-filter:blur(10px)}
+  .pill .fill{position:absolute;left:0;top:0;bottom:0;opacity:.16;z-index:0;transition:width .5s cubic-bezier(.2,.8,.3,1)}
+  .pill .pdot{position:relative;z-index:1;width:7px;height:7px;border-radius:50%}
+  .pill b{position:relative;z-index:1;color:var(--ink);font-weight:700}
+  .pill .goal{position:relative;z-index:1;color:var(--muted-2);font-weight:600;font-size:10.5px;margin-left:-3px}
+
+  .view{display:none;flex:1;flex-direction:column;animation:fade .4s ease both}
+  .view.active{display:flex}
+
+  /* ---------- WHEEL ---------- */
+  .wheelView{align-items:center;justify-content:center;gap:30px}
+  .wheel-wrap{position:relative;width:min(78vw,330px);aspect-ratio:1;display:grid;place-items:center}
+  .wheel-wrap::after{content:"";position:absolute;inset:-9px;border-radius:50%;pointer-events:none;
+    border:1px solid rgba(230,184,115,.22);box-shadow:0 0 0 6px rgba(255,255,255,.02) inset}
+  .wheel-spin{width:100%;height:100%;transform-origin:center;
+    transition:transform 3.8s cubic-bezier(.16,.86,.26,1);
+    filter:drop-shadow(0 24px 50px rgba(0,0,0,.55))}
+  .wheel{width:100%;height:100%;display:block}
+  .wlabel{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;fill:#190b14;letter-spacing:.01em}
+  .wsym{font-size:9px;fill:rgba(25,11,20,.6)}
+  .hub{position:absolute;width:54px;height:54px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#2a1622,#160a12);
+    border:1px solid var(--line);display:grid;place-items:center;
+    box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 0 0 4px rgba(20,10,18,.6)}
+  .hub span{font-size:20px}
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+    width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;
+    border-top:22px solid var(--gold);z-index:3;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5))}
+  .wheel-cap{text-align:center}
+  .wheel-cap .lbl{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-2);margin-bottom:6px}
+  .wheel-cap .res{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;min-height:36px}
+  .spin-btn{border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;
+    letter-spacing:.05em;color:#1a0c14;padding:17px 40px;border-radius:16px;
+    background:linear-gradient(120deg,var(--gold),var(--ember-soft));
+    box-shadow:0 18px 40px -18px var(--ember-glow);transition:transform .15s,opacity .2s}
+  .spin-btn:active{transform:scale(.97)}
+  .spin-btn:disabled{opacity:.5;cursor:default}
+
+  /* ---------- CARD ---------- */
+  .cardView{justify-content:center}
+  .card{width:100%;min-height:clamp(440px,60vh,580px);border-radius:var(--radius);
+    background:linear-gradient(165deg,var(--surface-2),var(--surface));border:1px solid var(--line);
+    backdrop-filter:blur(16px);box-shadow:var(--shadow);position:relative;overflow:hidden;
+    display:flex;flex-direction:column;transition:box-shadow .6s}
+  .card::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .6s;
+    background:radial-gradient(120% 80% at 50% -10%,var(--cardglow,transparent),transparent 60%)}
+  .card.lit::before{opacity:1}
+  .card.verdad{--cardglow:var(--jade-glow)}
+  .card.verdad.lit{box-shadow:var(--shadow),0 0 60px -10px var(--jade-glow),inset 0 0 0 1px rgba(98,213,180,.3)}
+  .card.reto{--cardglow:var(--ember-glow)}
+  .card.reto.lit{box-shadow:var(--shadow),0 0 60px -10px var(--ember-glow),inset 0 0 0 1px rgba(255,115,140,.3)}
+  .card.pen{--cardglow:rgba(230,184,115,.32)}
+  .card.pen.lit{box-shadow:var(--shadow),0 0 60px -10px rgba(230,184,115,.3),inset 0 0 0 1px rgba(230,184,115,.3)}
+
+  .face{display:none;flex:1;flex-direction:column;padding:30px 26px}
+  .face.show{display:flex;animation:facein .42s ease both}
+  @keyframes facein{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
+
+  .choose{justify-content:center;align-items:center;text-align:center}
+  .choose .who-av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;
+    font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;color:#160a12;margin-bottom:14px}
+  .choose .lead{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:23px;color:var(--muted);font-weight:400}
+  .choose .lead b{color:var(--ink);font-style:normal;font-weight:600}
+  .choose .pick{display:flex;flex-direction:column;gap:12px;width:100%;margin-top:24px}
+  .opt{border:1px solid var(--line);cursor:pointer;font-family:'Cormorant Garamond',serif;
+    font-size:clamp(32px,9vw,40px);font-weight:600;color:var(--ink);padding:30px 22px;
+    border-radius:20px;transition:transform .15s,box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
+  .opt::after{content:"";position:absolute;inset:0;opacity:0;transition:opacity .3s;
+    background:radial-gradient(120% 140% at 50% 120%,var(--og,transparent),transparent 70%)}
+  .opt:hover::after{opacity:.5}
+  .opt:active{transform:scale(.98)}
+  .opt small{display:block;font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;
+    letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;position:relative}
+  .opt.v{--og:var(--jade-glow);border-color:rgba(98,213,180,.4);
+    background:linear-gradient(135deg,rgba(98,213,180,.18),rgba(98,213,180,.03));
+    box-shadow:0 16px 42px -22px var(--jade-glow)}
+  .opt.v small{color:var(--jade)} .opt.v:hover{border-color:var(--jade);box-shadow:0 22px 50px -18px var(--jade-glow)}
+  .opt.r{--og:var(--ember-glow);border-color:rgba(255,115,140,.44);
+    background:linear-gradient(135deg,rgba(255,115,140,.2),rgba(255,115,140,.04));
+    box-shadow:0 16px 42px -22px var(--ember-glow)}
+  .opt.r small{color:var(--ember)} .opt.r:hover{border-color:var(--ember);box-shadow:0 22px 50px -18px var(--ember-glow)}
+  .surrender{margin-top:16px;background:none;border:0;color:var(--muted-2);font-family:inherit;
+    font-size:13px;cursor:pointer;letter-spacing:.04em;padding:6px}
+  .surrender:hover{color:var(--gold)}
+  .surrender b{color:var(--muted);font-weight:600}
+
+  .reveal{justify-content:space-between}
+  .rev-top{display:flex;align-items:center;justify-content:space-between}
+  .tag{font-size:11px;letter-spacing:.28em;text-transform:uppercase;font-weight:700}
+  .card.verdad .tag{color:var(--jade)} .card.reto .tag{color:var(--ember)}
+  .level-badge{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line);padding:6px 11px;border-radius:20px}
+  .prompt{flex:1;display:flex;align-items:center}
+  .prompt p{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(26px,7vw,37px);
+    line-height:1.18;letter-spacing:-.005em}
+  .prompt .target{color:var(--ember-soft);font-style:italic}
+  .card.verdad .prompt .target{color:var(--jade-soft)}
+
+  .timer{display:flex;align-items:center;gap:11px;margin-top:6px;min-height:0}
+  .tbtn{border:1px solid var(--line);background:var(--surface);color:var(--muted);font-family:inherit;
+    font-weight:600;font-size:13px;padding:11px 17px;border-radius:13px;cursor:pointer;transition:.2s}
+  .tbtn:hover{color:var(--ink);border-color:var(--ember)}
+  .tcount{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:var(--ember-soft);min-width:64px}
+  .tcount.done{color:var(--jade-soft)}
+
+  .actions{display:flex;gap:11px;padding-top:16px}
+  .act{flex:1;border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;
+    padding:17px;border-radius:16px;transition:transform .15s;letter-spacing:.02em}
+  .act:active{transform:scale(.97)}
+  .act.done{color:#10221d;background:linear-gradient(120deg,var(--jade-soft),var(--jade))}
+  .act.give{color:var(--muted);background:var(--surface);border:1px solid var(--line)}
+  .act.give:hover{color:var(--gold)}
+
+  /* penalty */
+  .penalty{justify-content:center;align-items:center;text-align:center;gap:6px}
+  .penalty .ico{font-size:54px;margin-bottom:8px}
+  .penalty .ptag{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px}
+  .penalty h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(30px,8vw,42px);line-height:1.12}
+  .penalty p{color:var(--muted);font-size:14.5px;margin-top:12px;max-width:300px}
+  .penalty .act{margin-top:28px;flex:0 0 auto;min-width:180px}
+
+  .card.pos{--cardglow:rgba(255,140,185,.42);
+    background:linear-gradient(165deg,rgba(255,135,180,.26),rgba(120,40,80,.5));border-color:rgba(255,150,195,.45)}
+  .card.pos.lit{box-shadow:var(--shadow),0 0 72px -8px rgba(255,140,185,.5),inset 0 0 0 1px rgba(255,150,195,.42)}
+  .card.pos .tag{color:#ffd2e3}
+  .card.pos .level-badge{border-color:rgba(255,150,195,.4);color:#ffd2e3}
+  .position{justify-content:space-between}
+  .position .prompt p{font-size:clamp(30px,8.5vw,42px)}
+  .pos-desc{display:block;font-family:'Manrope',sans-serif;font-size:15px;color:var(--muted);
+    margin-top:14px;line-height:1.45;font-weight:500}
+  .pos-note{font-size:13px;color:var(--gold);margin-top:8px;opacity:.85}
+
+  .footer-link{text-align:center;padding-top:14px}
+  .footer-link button{background:none;border:0;color:var(--muted-2);font-family:inherit;font-size:12px;
+    cursor:pointer;letter-spacing:.06em}
+  .footer-link button:hover{color:var(--muted)}
+
+  .winView{align-items:center;justify-content:center}
+  .win-inner{display:flex;flex-direction:column;align-items:center;text-align:center;
+    padding:38px 28px;width:100%;animation:facein .5s ease both}
+  .crown{font-size:30px;color:var(--gold);letter-spacing:.1em;margin-bottom:14px;opacity:.9}
+  .win-av{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;
+    font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:600;color:#160a12;
+    box-shadow:0 18px 48px -16px rgba(0,0,0,.6),0 0 0 6px rgba(255,255,255,.06)}
+  .win-eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted-2);
+    font-weight:600;margin-top:22px}
+  .win-name{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(46px,13vw,64px);
+    line-height:1;margin-top:6px}
+  .win-sub{color:var(--muted);font-size:14px;margin-top:14px}
+  .win-cta{margin-top:26px;min-width:220px}
+  .win-prize{margin-top:24px;width:100%;max-width:340px;background:rgba(230,184,115,.08);
+    border:1px solid rgba(230,184,115,.32);border-radius:18px;padding:18px 16px;text-align:center}
+  .win-prize-label{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);
+    font-weight:700;margin-bottom:6px}
+  .win-prize-text{font-family:'Cormorant Garamond',serif;font-size:23px;color:var(--ink);line-height:1.2}
+  .prize-names{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:13px}
+  .prize-chip{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);
+    background:var(--surface);border:1px solid var(--line);padding:7px 12px;border-radius:11px}
+  .prize-chip .pdot{width:7px;height:7px;border-radius:50%}
+
+  .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+    padding:28px;background:rgba(10,5,9,.74);backdrop-filter:blur(7px);animation:fade .3s ease both}
+  .modal.show{display:flex}
+  .modal-card{width:100%;max-width:360px;text-align:center;padding:38px 28px;border-radius:26px;
+    background:linear-gradient(165deg,var(--surface-2),var(--surface));border:1px solid var(--line);
+    box-shadow:var(--shadow),0 0 60px -16px var(--ember-glow);
+    animation:popin .42s cubic-bezier(.2,.9,.3,1.25) both}
+  @keyframes popin{from{opacity:0;transform:scale(.85) translateY(12px)}to{opacity:1;transform:none}}
+  .modal-ico{font-size:56px;margin-bottom:6px}
+  .modal-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);
+    font-weight:600;margin-bottom:12px}
+  .modal-card h2{font-family:'Cormorant Garamond',serif;font-weight:500;
+    font-size:clamp(30px,8vw,40px);line-height:1.12}
+  .modal-card h2 .nm{color:var(--ember-soft);font-weight:600}
+  .modal-text{color:var(--muted);font-size:14.5px;line-height:1.5;margin-top:14px;max-width:300px;
+    margin-left:auto;margin-right:auto}
+  .modal-card .cta{margin-top:26px;min-width:180px}
+
+  @media (max-height:700px){
+    .card{min-height:auto}
+    .brand h1{font-size:clamp(38px,12vw,52px)}
+    .wheelView{gap:20px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms!important}
+    .wheel-spin{transition-duration:1.6s!important}
+  }
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="stage">
+
+  <!-- ================= SETUP ================= -->
+  <section id="setup" class="screen active">
+    <div class="brand">
+      <div class="eyebrow">Un juego para dos · tres · o cuatro</div>
+      <h1><span class="j">Verdad</span><span class="y">o</span><em>Reto</em></h1>
+      <p class="tagline">Gira la ruleta, confiesa o atrévete.</p>
+    </div>
+
+    <div class="panel">
+      <div>
+        <span class="field-label">¿Quiénes juegan?</span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="2" class="on">Pareja<span class="sub">2</span></button>
+          <button data-mode="3">Trío<span class="sub">3</span></button>
+          <button data-mode="4">2 parejas<span class="sub">4</span></button>
+        </div>
+      </div>
+
+      <div>
+        <span class="field-label">Nombres y sexo</span>
+        <div class="names" id="names"></div>
+      </div>
+
+      <div>
+        <span class="field-label">Intensidad</span>
+        <div class="chips" id="levels">
+          <div class="chip c1" data-level="suave" data-on="1"><span class="lv">Suave</span><span class="dsc">Coqueteo sensual</span></div>
+          <div class="chip c3" data-level="picante" data-on="0"><span class="lv">Picante</span><span class="dsc">Sin límites</span></div>
+        </div>
+      </div>
+
+      <button class="cta" id="startBtn">Empezar a jugar</button>
+      <p class="hint" id="setupHint">Elige al menos un nivel de intensidad.</p>
+      <div class="rules">
+        <span>🏆 Gana quien llegue primero a <b>10 puntos</b>, y se lleva un premio.</span>
+        <span>✨ Cada <b>verdad</b> vale 2 puntos y cada <b>reto</b> 1 punto (o <b>3</b> si lo haces 30 segundos).</span>
+        <span id="ruleSurrender">🥃 Quien se rinde se quita una prenda de ropa y bebe un shot.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GAME ================= -->
+  <section id="game" class="screen">
+    <div class="gtop">
+      <div class="gtitle"><span class="j">Verdad</span> o <span class="e">Reto</span></div>
+      <div class="scoreboard" id="scoreboard"></div>
+    </div>
+
+    <!-- WHEEL VIEW -->
+    <div class="view wheelView active" id="wheelView">
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <div class="wheel-spin" id="wheelSpin"></div>
+        <div class="hub"><span>❤</span></div>
+      </div>
+      <div class="wheel-cap">
+        <div class="lbl" id="wheelLbl">Gira para empezar</div>
+        <div class="res" id="wheelRes">&nbsp;</div>
+      </div>
+      <button class="spin-btn" id="spinBtn">Girar la ruleta</button>
+    </div>
+
+    <!-- BOTTLE VIEW (elegir pareja) -->
+    <div class="view wheelView" id="bottleView">
+      <div class="wheel-cap" style="margin-bottom:2px">
+        <div class="lbl" id="bottleFor">Con quién te toca</div>
+      </div>
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <div class="wheel-spin" id="bottleSpin"></div>
+        <div class="hub"><span>🍾</span></div>
+      </div>
+      <div class="wheel-cap">
+        <div class="lbl" id="bottleLbl">Gira para elegir pareja</div>
+        <div class="res" id="bottleRes">&nbsp;</div>
+      </div>
+      <button class="spin-btn" id="bottleBtn">Girar la botella</button>
+    </div>
+
+    <!-- CARD VIEW -->
+    <div class="view cardView" id="cardView">
+      <div class="card" id="card">
+        <!-- choose -->
+        <div class="face choose show" id="chooseFace">
+          <div class="who-av" id="chooseAv">A</div>
+          <div class="lead"><b id="leadName">Ana</b>, ¿qué eliges?</div>
+          <div class="pick">
+            <button class="opt v" id="optVerdad"><small>Confiesa</small>Verdad</button>
+            <button class="opt r" id="optReto"><small>Atrévete</small>Reto</button>
+          </div>
+          <button class="surrender" id="surrenderBtn">Me rindo · <b>una prenda menos</b></button>
+        </div>
+        <!-- reveal -->
+        <div class="face reveal" id="revealFace">
+          <div class="rev-top">
+            <span class="tag" id="revTag">Verdad</span>
+            <span class="level-badge" id="revLevel">Suave</span>
+          </div>
+          <div class="prompt"><p id="promptText"></p></div>
+          <div class="timer" id="timerRow"></div>
+          <div class="actions">
+            <button class="act give" id="giveBtn">Me rindo</button>
+            <button class="act done" id="doneBtn">Completado</button>
+          </div>
+        </div>
+        <!-- penalty -->
+        <div class="face penalty" id="penaltyFace">
+          <div class="ico">🔥</div>
+          <div class="ptag">Te has rendido</div>
+          <h2 id="penName">Quítate una prenda de ropa</h2>
+          <p id="penPara">Y bebe un shot 🥃. Después, vuelve a girar.</p>
+          <button class="act done" id="penDoneBtn">Hecho · seguir</button>
+        </div>
+        <!-- position (todos) -->
+        <div class="face position" id="positionFace">
+          <div class="rev-top">
+            <span class="tag" id="posTag">Todos</span>
+            <span class="level-badge">Posición</span>
+          </div>
+          <div class="prompt"><p id="positionText"></p></div>
+          <div class="timer" id="posTimerRow"></div>
+          <div class="pos-note">Probadla juntos. ¡Y todos beben un trago! 🥃</div>
+          <div class="actions">
+            <button class="act done" id="posDoneBtn">Hecho · seguir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WIN VIEW -->
+    <div class="view winView" id="winView">
+      <div class="win-inner">
+        <div class="crown">♛</div>
+        <div class="win-av" id="winAv">A</div>
+        <div class="win-eyebrow">Gana la partida</div>
+        <div class="win-name" id="winName">Ricardo</div>
+        <div class="win-sub">Primero en llegar a 10 puntos.</div>
+        <div class="win-prize">
+          <div class="win-prize-label">Tu premio</div>
+          <div class="win-prize-text" id="winPrizeText">—</div>
+          <div class="prize-names" id="winPrizeNames"></div>
+        </div>
+        <button class="cta win-cta" id="playAgainBtn">Jugar de nuevo</button>
+      </div>
+    </div>
+
+    <div class="footer-link">
+      <button id="restartBtn">Terminar partida</button>
+    </div>
+  </section>
+</div>
+
+<!-- POP-UP: reglas al inicio -->
+<div class="modal" id="introModal">
+  <div class="modal-card">
+    <div class="modal-ico">🏆</div>
+    <div class="modal-eyebrow">Cómo se gana</div>
+    <h2>Gana quien llegue primero a <span class="nm">10 puntos</span></h2>
+    <p class="modal-text" id="introText">Cada verdad vale 2 puntos y cada reto 1 punto, o 3 si lo haces durante 30 segundos. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda se quita una prenda de ropa y bebe un shot.</p>
+    <button class="cta" id="introOk">¡Vamos!</button>
+  </div>
+</div>
+
+<!-- POP-UP: bebe un trago -->
+<div class="modal" id="drinkModal">
+  <div class="modal-card">
+    <div class="modal-ico">🍷</div>
+    <div class="modal-eyebrow">La ruleta ha hablado</div>
+    <h2><span class="nm" id="drinkName">Ana</span>, ¡bebe un trago!</h2>
+    <button class="cta" id="drinkOk">¡Salud!</button>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   CONTENIDO  ·  edita libremente
+   Cada elemento puede ser:
+     "texto"                -> para cualquier jugador
+     { t:"texto", s:"h" }   -> solo si el jugador es hombre  ♂
+     { t:"texto", s:"m" }   -> solo si el jugador es mujer   ♀
+   Usa {otro} para insertar el nombre de otro jugador al azar.
+   =================================================================== */
+const DATA = {
+  verdad:{
+    suave:[
+      "¿Cómo te gusta que empiece una noche íntima?",
+      "¿Qué parte de tu cuerpo te encanta que te acaricien?",
+      "¿Cuál es la posición sexual que más te gusta?",
+      "¿Prefieres que te seduzcan con palabras o con miradas?",
+      "¿Qué te resulta más irresistible de {otro}?",
+      "¿En qué parte más sexy de {otro} te fijas?",
+      "¿Dónde te gustaría que te besara {otro} ahora mismo?",
+      "¿Qué te excita más: lo que se ve o lo que se imagina?",
+      "¿Cuál es el lugar más inesperado donde te gustaría una aventura?",
+      "Confiesa algo que siempre quisiste pedir y nunca te atreviste."
+    ],
+    picante:[
+      "¿Cuál es la fantasía que aún no te has atrevido a confesar?",
+      "¿Prefieres llevar el control o que lo lleven por ti?",
+      "¿Cuál es tu zona más sensible?",
+      "¿Qué te excita más: lamer o que te laman?",
+      "Describe en tres palabras lo que te apetece que te hagan ahora.",
+      "¿Qué prenda de ropa te quitarías primero si te estuvieran observando?",
+      "¿Cuál es la posición sexual más intensa que te gustaría cumplir esta noche?",
+      "Confiesa algo que siempre quisiste pedir y nunca te atreviste.",
+      {t:"¿Prefieres penetrar rápido y salvaje o lento y profundo?",s:"h"},
+      {t:"¿Prefieres ser penetrada rápido y salvaje o lento y profundo?",s:"m"},
+      "¿Qué te gustaría que {otro} te hiciera ahora mismo?"
+    ]
+  },
+  reto:{
+    suave:[
+      "Dale a {otro} un beso en los labios.",
+      "Acaricia y besa el pecho de {otro}.",
+      "Susúrrale al oído a {otro} algo que quieres que te haga.",
+      "Besa el cuello de {otro}.",
+      "Quítate una ropa.",
+      "Deja que {otro} te quite una ropa.",
+      "Susúrrale a {otro} al oído lo que te apetecería hacerle.",
+      "Dale a {otro} un masaje en la espalda baja.",
+      {t:"Siéntate sobre la pierna de {otro} y rózate contra ella.",s:"m"},
+      "Deja que {otro} elija una ropa que debas quitarte."
+    ],
+    picante:[
+      "Chupa una parte del cuerpo de {otro} a tu elección.",
+      "Besa a {otro} donde tú elijas.",
+      "Con {otro}, acaríciense y tóquense mutuamente con las manos.",
+      "Besa apasionadamente a {otro} en la boca.",
+      "Con los ojos vendados, deja que {otro} te lama donde quiera.",
+      "Acaricia íntimamente a {otro}.",
+      "Háblale sucio a {otro} mientras le masturbas.",
+      "Recorre con la boca el cuerpo de {otro}, empezando en la boca y bajando por el cuello y el pecho hasta terminar en su sexo.",
+      "De pie con {otro}: bésense, abrácense, tóquense y muévanse rozándose, simulando una penetración.",
+      "Colócate en posición 69 con {otro}."
+    ]
+  }
+};
+
+const LEVEL_LABEL={suave:"Suave",picante:"Picante"};
+const PALETTE=["#9fe9d4","#e6b873","#ff9aab","#c9a8ff"]; // hasta 4 jugadores
+const WIN_SCORE=10;
+
+/* ---------------- ESTADO ---------------- */
+let state={mode:2,players:["",""],sex:["h","m","h","m"],levels:["suave"],
+  turn:0,scores:[]};
+let bag=[];        // bolsa para repartir turnos de forma justa
+let used={};       // cartas ya mostradas por jugador/tipo/nivel
+
+const $=s=>document.querySelector(s);
+const namesEl=$("#names"),startBtn=$("#startBtn"),setupHint=$("#setupHint");
+
+/* ---------------- SETUP ---------------- */
+function renderNames(){
+  const def=["Ana","Leo","Sol","Max"];
+  namesEl.innerHTML="";
+  for(let i=0;i<state.mode;i++){
+    const row=document.createElement("div");
+    row.className="name-row";
+    row.innerHTML=`<span class="dot" style="background:${PALETTE[i]}"></span>
+      <input type="text" maxlength="12" placeholder="Nombre · ${def[i]}" value="${state.players[i]||""}">
+      <div class="gender">
+        <button class="gbtn h ${state.sex[i]==='h'?'on':''}" data-sex="h" title="Hombre">♂</button>
+        <button class="gbtn m ${state.sex[i]==='m'?'on':''}" data-sex="m" title="Mujer">♀</button>
+      </div>`;
+    const inp=row.querySelector("input");
+    inp.addEventListener("input",e=>{state.players[i]=e.target.value;validate();});
+    row.querySelectorAll(".gbtn").forEach(b=>{
+      b.addEventListener("click",()=>{
+        state.sex[i]=b.dataset.sex;
+        row.querySelectorAll(".gbtn").forEach(x=>x.classList.remove("on"));
+        b.classList.add("on");
+      });
+    });
+    namesEl.appendChild(row);
+  }
+}
+document.querySelectorAll("#modeSeg button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("#modeSeg button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    state.mode=+b.dataset.mode;
+    state.players=state.players.slice(0,state.mode);
+    while(state.players.length<state.mode) state.players.push("");
+    renderNames();validate();
+  });
+});
+document.querySelectorAll("#levels .chip").forEach(c=>{
+  c.addEventListener("click",()=>{
+    if(c.dataset.on==="1") return; // ya activa: una siempre seleccionada
+    document.querySelectorAll('#levels .chip').forEach(x=>x.dataset.on="0");
+    c.dataset.on="1";
+    state.levels=[c.dataset.level];
+    validate();updateRules();
+  });
+});
+function validate(){
+  const namesOk=state.players.slice(0,state.mode).every(n=>n.trim().length>0);
+  startBtn.disabled=!(namesOk && state.levels.length>0);
+  setupHint.textContent=!state.levels.length?"Elige al menos un nivel de intensidad."
+    :!namesOk?"Escribe el nombre de cada jugador.":"Todo listo. La ruleta os espera.";
+}
+function updateRules(){
+  const el=$("#ruleSurrender");if(!el) return;
+  el.textContent=state.levels.includes("picante")
+    ? "🥃 Quien se rinde bebe un shot."
+    : "🥃 Quien se rinde se quita una prenda de ropa y bebe un shot.";
+}
+renderNames();validate();updateRules();
+
+/* ---------------- VISTAS ---------------- */
+const setup=$("#setup"),game=$("#game");
+const wheelView=$("#wheelView"),cardView=$("#cardView"),winView=$("#winView"),bottleView=$("#bottleView");
+function show(view){
+  [wheelView,cardView,winView,bottleView].forEach(v=>{v.classList.remove("active");v.style.display="none";});
+  view.classList.add("active");view.style.display="flex";
+}
+
+startBtn.addEventListener("click",()=>{
+  state.scores=state.players.map(()=>0);
+  bag=[];used={};currentRot=0;
+  setup.classList.remove("active");game.classList.add("active");
+  buildWheel();renderScore();
+  $("#wheelRes").innerHTML="&nbsp;";$("#wheelLbl").textContent="Gira para empezar";
+  $("#introText").textContent=state.levels.includes("picante")
+    ? "Cada verdad vale 2 puntos y cada reto 1 punto, o 3 si lo haces durante 30 segundos. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda bebe un shot."
+    : "Cada verdad vale 2 puntos y cada reto 1 punto, o 3 si lo haces durante 30 segundos. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda se quita una prenda de ropa y bebe un shot.";
+  spinBtn.disabled=false;
+  show(wheelView);
+  introModal.classList.add("show");
+});
+$("#restartBtn").addEventListener("click",()=>{
+  stopTimer();clearTimeout(spinTimer);clearTimeout(bottleTimer);game.classList.remove("active");setup.classList.add("active");
+});
+$("#playAgainBtn").addEventListener("click",()=>{
+  state.scores=state.players.map(()=>0);
+  bag=[];used={};currentRot=0;
+  renderScore();buildWheel();
+  $("#wheelRes").innerHTML="&nbsp;";$("#wheelLbl").textContent="Gira para empezar";
+  spinBtn.disabled=false;
+  show(wheelView);
+});
+
+function renderScore(){
+  const sb=$("#scoreboard");sb.innerHTML="";
+  state.players.slice(0,state.mode).forEach((p,k)=>{
+    const pct=Math.min(100,Math.round((state.scores[k]||0)/WIN_SCORE*100));
+    const el=document.createElement("div");el.className="pill";
+    el.innerHTML=`<span class="fill" style="width:${pct}%;background:${PALETTE[k]}"></span>`+
+                 `<span class="pdot" style="background:${PALETTE[k]}"></span>`+
+                 `<b>${state.scores[k]||0}</b><span class="goal">/${WIN_SCORE}</span>`;
+    sb.appendChild(el);
+  });
+}
+
+/* ---------------- RULETA ---------------- */
+const wheelSpin=$("#wheelSpin"),spinBtn=$("#spinBtn");
+let currentRot=0;
+const NS="http://www.w3.org/2000/svg";
+function pol(cx,cy,r,a){const rad=a*Math.PI/180;return{x:cx+r*Math.sin(rad),y:cy-r*Math.cos(rad)};}
+function slicePath(cx,cy,r,a0,a1){
+  const p0=pol(cx,cy,r,a0),p1=pol(cx,cy,r,a1);
+  const large=(a1-a0)>180?1:0;
+  return `M${cx} ${cy} L${p0.x.toFixed(2)} ${p0.y.toFixed(2)} A${r} ${r} 0 ${large} 1 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} Z`;
+}
+function buildWheel(){
+  currentRot=0;wheelSpin.style.transition="none";wheelSpin.style.transform="rotate(0deg)";
+  const n=state.mode+1,seg=360/n,R=96,cx=100,cy=100;
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox","0 0 200 200");svg.classList.add("wheel");
+  for(let i=0;i<n;i++){
+    const a0=i*seg,a1=(i+1)*seg,mid=a0+seg/2;
+    const todos=(i===state.mode);
+    const path=document.createElementNS(NS,"path");
+    path.setAttribute("d",slicePath(cx,cy,R,a0,a1));
+    path.setAttribute("fill",todos?"#e6b873":PALETTE[i]);
+    path.setAttribute("fill-opacity",todos?"1":"0.92");
+    path.setAttribute("stroke","rgba(20,10,18,.55)");path.setAttribute("stroke-width","1.2");
+    svg.appendChild(path);
+    const lp=pol(cx,cy,R*0.62,mid);
+    const name=todos?(state.mode===2?"Ambos":"Todos"):(state.players[i].trim()||("J"+(i+1)));
+    const t=document.createElementNS(NS,"text");
+    t.setAttribute("x",lp.x.toFixed(1));t.setAttribute("y",lp.y.toFixed(1));
+    t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","middle");
+    t.setAttribute("class","wlabel");t.textContent=name;
+    svg.appendChild(t);
+    const sp=pol(cx,cy,R*0.82,mid);
+    const sym=document.createElementNS(NS,"text");
+    sym.setAttribute("x",sp.x.toFixed(1));sym.setAttribute("y",sp.y.toFixed(1));
+    sym.setAttribute("text-anchor","middle");sym.setAttribute("dominant-baseline","middle");
+    sym.setAttribute("class","wsym");sym.textContent=todos?"❤":(state.sex[i]==="h"?"♂":"♀");
+    svg.appendChild(sym);
+  }
+  wheelSpin.innerHTML="";wheelSpin.appendChild(svg);
+  void wheelSpin.offsetWidth;
+  wheelSpin.style.transition="";
+}
+let spinTimer=null;
+function nextPlayer(){
+  return Math.floor(Math.random()*(state.mode+1)); // aleatorio: jugadores + 'todos'
+}
+spinBtn.addEventListener("click",()=>{
+  spinBtn.disabled=true;
+  $("#wheelLbl").textContent="Girando…";$("#wheelRes").innerHTML="&nbsp;";
+  const n=state.mode+1,seg=360/n;
+  const target=nextPlayer();
+  const center=target*seg+seg/2;
+  const pad=Math.min(16,seg*0.28);
+  const jit=(Math.random()*2-1)*(seg/2-pad);
+  const dest=(((-center+jit)%360)+360)%360;
+  const fullSpins=360*(4+Math.floor(Math.random()*2));
+  const delta=(((dest-(currentRot%360))%360)+360)%360;
+  currentRot=currentRot+fullSpins+delta;
+  wheelSpin.style.transform=`rotate(${currentRot}deg)`;
+  const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  clearTimeout(spinTimer);
+  spinTimer=setTimeout(()=>{
+    if(target===state.mode){
+      $("#wheelLbl").textContent="¡Os toca a";
+      $("#wheelRes").textContent=(state.mode===2?"ambos!":"todos!");
+      setTimeout(showPosition,650);
+    }else{
+      state.turn=target;
+      const name=state.players[target].trim()||("Jugador "+(target+1));
+      $("#wheelLbl").textContent="Le toca a";
+      $("#wheelRes").textContent=name;
+      setTimeout(()=>showDrink(name),600);
+    }
+  }, reduce?1500:3950);
+});
+
+/* ---------------- CARTA / ELECCIÓN ---------------- */
+const card=$("#card"),chooseFace=$("#chooseFace"),revealFace=$("#revealFace"),penaltyFace=$("#penaltyFace"),positionFace=$("#positionFace");
+const drinkModal=$("#drinkModal");
+const introModal=$("#introModal");
+$("#introOk").addEventListener("click",()=>{introModal.classList.remove("show");});
+function showDrink(name){$("#drinkName").textContent=name;drinkModal.classList.add("show");}
+$("#drinkOk").addEventListener("click",()=>{drinkModal.classList.remove("show");openChoose();});
+function showFace(f){
+  [chooseFace,revealFace,penaltyFace,positionFace].forEach(x=>x.classList.remove("show"));
+  f.classList.add("show");
+}
+
+/* ---------- POSICIÓN (todos/ambos) ---------- */
+const POSITIONS={
+  2:[
+    {n:"Sentada",d:"Una se sienta sobre la cara de la otra persona (o al revés)."},
+    {n:"Perrito",d:"Uno a cuatro patas; el otro detrás."},
+    {n:"El 69",d:"Invertidos, dándoos placer a la vez."}
+  ],
+  3:[
+    {n:"El centro",d:"La persona del medio es acariciada, besada y rozada por las otras dos."},
+    {n:"Perrito con dos",d:"Uno detrás de otro y este atendiendo con la boca a un tercero."},
+    {n:"Mamada doble",d:"Dos atienden a una persona."}
+  ],
+  4:[
+    {n:"Dos parejas",d:"Lado a lado, mirándose mientras lo hacéis."},
+    {n:"El círculo",d:"Cada uno se roza con quien tiene al lado."},
+    {n:"El director",d:"Una pareja dirige a la otra."}
+  ]
+};
+let lastPosition="";
+function showPosition(){
+  stopTimer();
+  const list=POSITIONS[state.mode]||POSITIONS[2];
+  let p,tries=0;
+  do{p=list[Math.floor(Math.random()*list.length)];tries++;}while(p.n===lastPosition&&list.length>1&&tries<8);
+  lastPosition=p.n;
+  card.className="card pos";
+  $("#posTag").textContent=(state.mode===2?"Ambos":"Todos");
+  $("#positionText").innerHTML=`${p.n}<span class="pos-desc">${p.d}</span>`;
+  posPoints=2;
+  const ptr=$("#posTimerRow");ptr.innerHTML="";
+  ptr.appendChild(makePosBtn(30,2));
+  ptr.appendChild(makePosBtn(60,3));
+  showFace(positionFace);
+  show(cardView);
+  requestAnimationFrame(()=>card.classList.add("lit"));
+}
+function makePosBtn(sec,pts){
+  const b=document.createElement("button");b.className="tbtn";
+  b.innerHTML=`${sec} s · <b>${pts} puntos c/u</b>`;
+  b.addEventListener("click",()=>{posPoints=pts;startTimer(sec,$("#posTimerRow"));});
+  return b;
+}
+function completePosition(){
+  for(let i=0;i<state.mode;i++) state.scores[i]+=posPoints; // todos suman
+  renderScore();
+  let w=-1,best=-1;
+  for(let i=0;i<state.mode;i++) if(state.scores[i]>=WIN_SCORE && state.scores[i]>best){best=state.scores[i];w=i;}
+  if(w>=0) showWin(w); else backToWheel();
+}
+$("#posDoneBtn").addEventListener("click",completePosition);
+function openChoose(){
+  const i=state.turn,name=state.players[i].trim()||("Jugador "+(i+1));
+  card.className="card";stopTimer();
+  $("#chooseAv").textContent=name[0].toUpperCase();
+  $("#chooseAv").style.background=PALETTE[i];
+  $("#leadName").textContent=name;
+  showFace(chooseFace);
+  show(cardView);
+}
+function backToWheel(){
+  show(wheelView);
+  $("#wheelLbl").textContent="Gira de nuevo";$("#wheelRes").innerHTML="&nbsp;";
+  spinBtn.disabled=false;
+  card.className="card";stopTimer();
+}
+
+function nameOf(i){return state.players[i].trim()||("Jugador "+(i+1));}
+function eligiblePartners(){
+  const turn=state.turn, mySex=state.sex[turn];
+  let cand=[];
+  for(let i=0;i<state.mode;i++){
+    if(i===turn) continue;
+    if(mySex==="h" && state.sex[i]==="h") continue; // dos hombres no interactúan
+    cand.push(i);
+  }
+  if(!cand.length) for(let i=0;i<state.mode;i++) if(i!==turn) cand.push(i); // respaldo
+  return cand;
+}
+function otherName(){
+  const cand=eligiblePartners();
+  if(!cand.length) return "tu pareja";
+  return nameOf(cand[Math.floor(Math.random()*cand.length)]);
+}
+function pickLevel(){return state.levels[Math.floor(Math.random()*state.levels.length)];}
+function norm(x){return typeof x==="string"?{t:x}:x;}
+function pickPrompt(type){
+  const lvl=pickLevel(),sex=state.sex[state.turn];
+  const pool=DATA[type][lvl].map(norm).filter(x=>!x.s||x.s===sex);
+  const key=state.turn+"|"+type+"|"+lvl;
+  if(!used[key]) used[key]=new Set();
+  let avail=pool.filter(x=>!used[key].has(x.t));
+  if(!avail.length){used[key].clear();avail=pool.slice();} // mazo agotado: barajar de nuevo
+  const choice=avail[Math.floor(Math.random()*avail.length)];
+  used[key].add(choice.t);
+  return{lvl,txt:choice.t};
+}
+function revealCard(type,lvl,txt,partner){
+  dealtType=type;
+  const filled = partner!=null
+    ? txt.replace(/\{otro\}/g,`<span class="target">${partner}</span>`)
+    : txt;
+  card.className="card "+(type==="verdad"?"verdad":"reto");
+  $("#revTag").textContent=type==="verdad"?"Verdad":"Reto";
+  $("#revLevel").textContent=LEVEL_LABEL[lvl];
+  $("#promptText").innerHTML=filled;
+  const tr=$("#timerRow");tr.innerHTML="";
+  if(type==="reto"){
+    retoPoints=1;
+    tr.appendChild(makePointsBtn(15,1));
+    tr.appendChild(makePointsBtn(30,3));
+  }
+  show(cardView);
+  showFace(revealFace);
+  requestAnimationFrame(()=>card.classList.add("lit"));
+}
+function deal(type){
+  const {lvl,txt}=pickPrompt(type);
+  const needsOther=txt.includes("{otro}");
+  if(needsOther && type==="reto"){
+    const cands=eligiblePartners();
+    if(cands.length>=2){ startBottle(type,lvl,txt,cands); return; }
+    revealCard(type,lvl,txt, cands.length?nameOf(cands[0]):"tu pareja");
+    return;
+  }
+  revealCard(type,lvl,txt, needsOther?otherName():null);
+}
+$("#optVerdad").addEventListener("click",()=>deal("verdad"));
+$("#optReto").addEventListener("click",()=>deal("reto"));
+
+/* ---------- BOTELLA: elegir pareja ---------- */
+const bottleSpin=$("#bottleSpin"),bottleBtn=$("#bottleBtn");
+let bottleRot=0,bottleTimer=null,pendingReto=null,dealtType="reto",retoPoints=1,posPoints=2;
+function buildSpinner(spinEl,indices){
+  spinEl.style.transition="none";spinEl.style.transform="rotate(0deg)";
+  const n=indices.length,seg=360/n,R=96,cx=100,cy=100;
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox","0 0 200 200");svg.classList.add("wheel");
+  indices.forEach((pi,idx)=>{
+    const a0=idx*seg,a1=(idx+1)*seg,mid=a0+seg/2;
+    const path=document.createElementNS(NS,"path");
+    path.setAttribute("d",slicePath(cx,cy,R,a0,a1));
+    path.setAttribute("fill",PALETTE[pi]);path.setAttribute("fill-opacity","0.92");
+    path.setAttribute("stroke","rgba(20,10,18,.55)");path.setAttribute("stroke-width","1.2");
+    svg.appendChild(path);
+    const lp=pol(cx,cy,R*0.6,mid);
+    const t=document.createElementNS(NS,"text");
+    t.setAttribute("x",lp.x.toFixed(1));t.setAttribute("y",lp.y.toFixed(1));
+    t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","middle");
+    t.setAttribute("class","wlabel");t.textContent=nameOf(pi);
+    svg.appendChild(t);
+    const sp=pol(cx,cy,R*0.82,mid);
+    const sym=document.createElementNS(NS,"text");
+    sym.setAttribute("x",sp.x.toFixed(1));sym.setAttribute("y",sp.y.toFixed(1));
+    sym.setAttribute("text-anchor","middle");sym.setAttribute("dominant-baseline","middle");
+    sym.setAttribute("class","wsym");sym.textContent=state.sex[pi]==="h"?"♂":"♀";
+    svg.appendChild(sym);
+  });
+  spinEl.innerHTML="";spinEl.appendChild(svg);
+  void spinEl.offsetWidth;spinEl.style.transition="";
+}
+function startBottle(type,lvl,txt,cands){
+  pendingReto={type,lvl,txt,cands};
+  bottleRot=0;
+  $("#bottleFor").textContent=nameOf(state.turn)+", gira para tu pareja";
+  $("#bottleLbl").textContent="Gira para elegir pareja";
+  $("#bottleRes").innerHTML="&nbsp;";
+  bottleBtn.disabled=false;
+  buildSpinner(bottleSpin,cands);
+  show(bottleView);
+}
+bottleBtn.addEventListener("click",()=>{
+  bottleBtn.disabled=true;
+  const cands=pendingReto.cands,n=cands.length,seg=360/n;
+  const pos=Math.floor(Math.random()*n);
+  const center=pos*seg+seg/2;
+  const pad=Math.min(16,seg*0.28);
+  const jit=(Math.random()*2-1)*(seg/2-pad);
+  const dest=(((-center+jit)%360)+360)%360;
+  const fullSpins=360*(4+Math.floor(Math.random()*2));
+  const delta=(((dest-(bottleRot%360))%360)+360)%360;
+  bottleRot=bottleRot+fullSpins+delta;
+  bottleSpin.style.transform=`rotate(${bottleRot}deg)`;
+  $("#bottleLbl").textContent="Girando…";
+  const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  clearTimeout(bottleTimer);
+  bottleTimer=setTimeout(()=>{
+    const nm=nameOf(cands[pos]);
+    $("#bottleLbl").textContent="Tu pareja es";
+    $("#bottleRes").textContent=nm;
+    setTimeout(()=>revealCard(pendingReto.type,pendingReto.lvl,pendingReto.txt,nm),700);
+  }, reduce?1500:3950);
+});
+
+function complete(){
+  state.scores[state.turn]+=(dealtType==="verdad"?2:retoPoints);
+  renderScore();
+  if(state.scores[state.turn]>=WIN_SCORE) showWin(state.turn);
+  else backToWheel();
+}
+function showWin(i){
+  stopTimer();
+  const name=state.players[i].trim()||("Jugador "+(i+1));
+  $("#winName").textContent=name;
+  $("#winName").style.color=PALETTE[i];
+  $("#winAv").textContent=name[0].toUpperCase();
+  $("#winAv").style.background=PALETTE[i];
+  const spicy=state.levels.includes("picante");
+  $("#winPrizeText").textContent=spicy
+    ? "Los demás te masturban hasta el orgasmo"
+    : "Los demás se desnudan por completo";
+  const wrap=$("#winPrizeNames");wrap.innerHTML="";
+  for(let k=0;k<state.mode;k++){
+    if(k===i) continue;
+    if(spicy && state.sex[i]==="h" && state.sex[k]==="h") continue; // dos hombres no interactúan
+    const el=document.createElement("span");el.className="prize-chip";
+    el.innerHTML=`<span class="pdot" style="background:${PALETTE[k]}"></span>${state.players[k].trim()||("Jugador "+(k+1))}`;
+    wrap.appendChild(el);
+  }
+  show(winView);
+}
+function surrender(){
+  stopTimer();
+  card.className="card pen";
+  const name=state.players[state.turn].trim()||("Jugador "+(state.turn+1));
+  if(state.levels.includes("picante")){
+    $("#penName").textContent=name+", bebe un shot 🥃";
+    $("#penPara").textContent="Te has rendido. Después, vuelve a girar.";
+  }else{
+    $("#penName").textContent=name+", quítate una prenda de ropa";
+    $("#penPara").textContent="Y bebe un shot 🥃. Después, vuelve a girar.";
+  }
+  showFace(penaltyFace);
+  requestAnimationFrame(()=>card.classList.add("lit"));
+}
+$("#doneBtn").addEventListener("click",complete);
+$("#giveBtn").addEventListener("click",surrender);
+$("#surrenderBtn").addEventListener("click",surrender);
+$("#penDoneBtn").addEventListener("click",backToWheel);
+
+/* ---------------- TIMER ---------------- */
+let timerInt=null,timerEl=null;
+function makePointsBtn(sec,pts){
+  const b=document.createElement("button");b.className="tbtn";
+  b.innerHTML=`${sec} s · <b>${pts} ${pts===1?"punto":"puntos"}</b>`;
+  b.addEventListener("click",()=>{retoPoints=pts;startTimer(sec);});
+  return b;
+}
+function startTimer(sec,container){
+  stopTimer();const tr=container||$("#timerRow");tr.innerHTML="";
+  timerEl=document.createElement("div");timerEl.className="tcount";tr.appendChild(timerEl);
+  let left=sec;
+  const tick=()=>{
+    timerEl.textContent=left>0?`0:${String(left).padStart(2,"0")}`:"¡Listo!";
+    if(left<=0){timerEl.classList.add("done");chime();clearInterval(timerInt);timerInt=null;return;}
+    left--;
+  };
+  tick();timerInt=setInterval(tick,1000);
+}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
+function chime(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    [880,1175].forEach((f,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=f;
+      o.connect(g);g.connect(ctx.destination);const t=ctx.currentTime+i*.16;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.18,t+.03);
+      g.gain.exponentialRampToValueAtTime(.0001,t+.5);o.start(t);o.stop(t+.5);
+    });
+  }catch(e){}
+}
+</script>
+</body>
+</html>
