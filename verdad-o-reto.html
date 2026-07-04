@@ -91,6 +91,7 @@
   .chip.c1{--accent:#9fe9d4;--accentglow:var(--jade-glow)}
   .chip.c2{--accent:var(--gold);--accentglow:rgba(230,184,115,.3)}
   .chip.c3{--accent:var(--ember);--accentglow:var(--ember-glow)}
+  .chip.locked{opacity:.5;cursor:not-allowed}
 
   .cta{margin-top:6px;border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:16px;
     letter-spacing:.04em;color:#1a0c14;padding:19px;border-radius:18px;
@@ -261,6 +262,10 @@
     line-height:1;margin-top:6px}
   .win-sub{color:var(--muted);font-size:14px;margin-top:14px}
   .win-cta{margin-top:26px;min-width:220px}
+  .win-decide{color:var(--muted);font-size:13.5px;margin-top:24px;max-width:320px;line-height:1.45}
+  .win-again{margin-top:14px;background:none;border:0;color:var(--muted-2);font-family:inherit;
+    font-size:13px;cursor:pointer;letter-spacing:.04em}
+  .win-again:hover{color:var(--muted)}
   .win-prize{margin-top:24px;width:100%;max-width:340px;background:rgba(230,184,115,.08);
     border:1px solid rgba(230,184,115,.32);border-radius:18px;padding:18px 16px;text-align:center}
   .win-prize-label{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);
@@ -288,6 +293,13 @@
   .modal-text{color:var(--muted);font-size:14.5px;line-height:1.5;margin-top:14px;max-width:300px;
     margin-left:auto;margin-right:auto}
   .modal-card .cta{margin-top:26px;min-width:180px}
+
+  .countdown{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
+    background:rgba(6,2,5,.93);animation:fade .25s ease both}
+  .countdown.show{display:flex}
+  .count-num{font-family:'Cormorant Garamond',serif;font-weight:600;line-height:1;
+    font-size:min(58vw,58vh);color:#8e1b39;text-shadow:0 0 46px rgba(142,27,57,.65),0 0 8px rgba(180,30,70,.5)}
+  @keyframes countpulse{from{transform:scale(1.22);opacity:.65}to{transform:scale(1);opacity:1}}
 
   @media (max-height:700px){
     .card{min-height:auto}
@@ -331,7 +343,7 @@
         <span class="field-label">Intensidad</span>
         <div class="chips" id="levels">
           <div class="chip c1" data-level="suave" data-on="1"><span class="lv">Suave</span><span class="dsc">Coqueteo sensual</span></div>
-          <div class="chip c3" data-level="picante" data-on="0"><span class="lv">Picante</span><span class="dsc">Sin límites</span></div>
+          <div class="chip c3 locked" data-level="picante" data-on="0"><span class="lv">Picante</span><span class="dsc">🔒 Al ganar</span></div>
         </div>
       </div>
 
@@ -339,7 +351,8 @@
       <p class="hint" id="setupHint">Elige al menos un nivel de intensidad.</p>
       <div class="rules">
         <span>🏆 Gana quien llegue primero a <b>10 puntos</b>, y se lleva un premio.</span>
-        <span>✨ Cada <b>verdad</b> vale 2 puntos y cada <b>reto</b> 1 punto (o <b>3</b> si lo haces 30 segundos).</span>
+        <span>✨ Cada <b>verdad</b> vale 2 puntos y cada <b>reto</b> 1 punto.</span>
+        <span>🔓 Empezáis en <b>Suave</b>. Quien gane los 10 puntos decide si el juego avanza al <b>Picante</b>.</span>
         <span id="ruleSurrender">🥃 Quien se rinde se quita una prenda de ropa y bebe un shot.</span>
       </div>
     </div>
@@ -446,7 +459,9 @@
           <div class="win-prize-text" id="winPrizeText">—</div>
           <div class="prize-names" id="winPrizeNames"></div>
         </div>
-        <button class="cta win-cta" id="playAgainBtn">Jugar de nuevo</button>
+        <div class="win-decide" id="winDecide">Como ganador/a, tú decides si el juego avanza al Picante.</div>
+        <button class="cta win-cta" id="toPicanteBtn">Avanzar al Picante 🔥</button>
+        <button class="win-again" id="playAgainBtn">Jugar de nuevo</button>
       </div>
     </div>
 
@@ -462,9 +477,14 @@
     <div class="modal-ico">🏆</div>
     <div class="modal-eyebrow">Cómo se gana</div>
     <h2>Gana quien llegue primero a <span class="nm">10 puntos</span></h2>
-    <p class="modal-text" id="introText">Cada verdad vale 2 puntos y cada reto 1 punto, o 3 si lo haces durante 30 segundos. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda se quita una prenda de ropa y bebe un shot.</p>
+    <p class="modal-text" id="introText">Cada verdad vale 2 puntos y cada reto 1 punto. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda se quita una prenda de ropa y bebe un shot.</p>
     <button class="cta" id="introOk">¡Vamos!</button>
   </div>
+</div>
+
+<!-- CONTAGEM em ecrã inteiro -->
+<div class="countdown" id="countdownOverlay">
+  <div class="count-num" id="countNum">15</div>
 </div>
 
 <!-- POP-UP: bebe un trago -->
@@ -520,12 +540,13 @@ const DATA = {
       "Acaricia y besa el pecho de {otro}.",
       "Susúrrale al oído a {otro} algo que quieres que te haga.",
       "Besa el cuello de {otro}.",
-      "Quítate una ropa.",
-      "Deja que {otro} te quite una ropa.",
+      "Quítate una prenda.",
+      "Deja que {otro} te quite una prenda.",
       "Susúrrale a {otro} al oído lo que te apetecería hacerle.",
       "Dale a {otro} un masaje en la espalda baja.",
       {t:"Siéntate sobre la pierna de {otro} y rózate contra ella.",s:"m"},
-      "Deja que {otro} elija una ropa que debas quitarte."
+      "Deja que {otro} elija una prenda que debas quitarte.",
+      "Besa a todos los demás, uno por uno, durante 15 segundos."
     ],
     picante:[
       "Chupa una parte del cuerpo de {otro} a tu elección.",
@@ -592,7 +613,7 @@ document.querySelectorAll("#modeSeg button").forEach(b=>{
 });
 document.querySelectorAll("#levels .chip").forEach(c=>{
   c.addEventListener("click",()=>{
-    if(c.dataset.on==="1") return; // ya activa: una siempre seleccionada
+    if(c.classList.contains("locked")||c.dataset.on==="1") return;
     document.querySelectorAll('#levels .chip').forEach(x=>x.dataset.on="0");
     c.dataset.on="1";
     state.levels=[c.dataset.level];
@@ -622,14 +643,15 @@ function show(view){
 }
 
 startBtn.addEventListener("click",()=>{
+  state.levels=["suave"]; // se empieza siempre en Suave
   state.scores=state.players.map(()=>0);
   bag=[];used={};currentRot=0;
   setup.classList.remove("active");game.classList.add("active");
   buildWheel();renderScore();
   $("#wheelRes").innerHTML="&nbsp;";$("#wheelLbl").textContent="Gira para empezar";
   $("#introText").textContent=state.levels.includes("picante")
-    ? "Cada verdad vale 2 puntos y cada reto 1 punto, o 3 si lo haces durante 30 segundos. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda bebe un shot."
-    : "Cada verdad vale 2 puntos y cada reto 1 punto, o 3 si lo haces durante 30 segundos. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda se quita una prenda de ropa y bebe un shot.";
+    ? "Cada verdad vale 2 puntos y cada reto 1 punto. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda bebe un shot."
+    : "Cada verdad vale 2 puntos y cada reto 1 punto. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda se quita una prenda de ropa y bebe un shot.";
   spinBtn.disabled=false;
   show(wheelView);
   introModal.classList.add("show");
@@ -644,6 +666,17 @@ $("#playAgainBtn").addEventListener("click",()=>{
   $("#wheelRes").innerHTML="&nbsp;";$("#wheelLbl").textContent="Gira para empezar";
   spinBtn.disabled=false;
   show(wheelView);
+});
+$("#toPicanteBtn").addEventListener("click",()=>{
+  state.levels=["picante"];
+  state.scores=state.players.map(()=>0);
+  bag=[];used={};currentRot=0;lastPosition="";
+  renderScore();buildWheel();updateRules();
+  $("#introText").textContent="Ahora en Picante. Cada verdad vale 2 puntos y cada reto 1 punto. Gana quien llegue primero a 10, y se lleva un premio. Quien se rinda bebe un shot.";
+  $("#wheelRes").innerHTML="&nbsp;";$("#wheelLbl").textContent="Gira para empezar";
+  spinBtn.disabled=false;
+  show(wheelView);
+  introModal.classList.add("show");
 });
 
 function renderScore(){
@@ -754,9 +787,9 @@ const POSITIONS={
     {n:"El 69",d:"Invertidos, dándoos placer a la vez."}
   ],
   3:[
-    {n:"El centro",d:"La persona del medio es acariciada, besada y rozada por las otras dos."},
-    {n:"Perrito con dos",d:"Uno detrás de otro y este atendiendo con la boca a un tercero."},
-    {n:"Mamada doble",d:"Dos atienden a una persona."}
+    {n:"El centro",d:"{quien} queda en el centro, acariciada, besada y rozada por las otras dos.",pick:"m"},
+    {n:"Perrito con dos",d:"{quien} recibe a los dos: uno por detrás y otro por delante.",pick:"m"},
+    {n:"Mamada doble",d:"Los otros dos atienden a {quien}.",pick:"any"}
   ],
   4:[
     {n:"Dos parejas",d:"Lado a lado, mirándose mientras lo hacéis."},
@@ -765,31 +798,39 @@ const POSITIONS={
   ]
 };
 let lastPosition="";
+function playersIdx(filter){const a=[];for(let i=0;i<state.mode;i++){if(filter&&state.sex[i]!==filter)continue;a.push(i);}return a;}
 function showPosition(){
   stopTimer();
   const list=POSITIONS[state.mode]||POSITIONS[2];
   let p,tries=0;
   do{p=list[Math.floor(Math.random()*list.length)];tries++;}while(p.n===lastPosition&&list.length>1&&tries<8);
   lastPosition=p.n;
+  if(p.pick){
+    const cands=playersIdx(p.pick==="m"?"m":null);
+    if(cands.length>=2){
+      startSpin({opts:cands,forText:"¿Quién recibe?",label:"Gira para saber quién recibe",
+        resWord:()=>"Recibe",onDone:(nm,isAll,sel)=>revealPosition(p,nameOf(sel))});
+      return;
+    }
+    revealPosition(p,cands.length?nameOf(cands[0]):"una persona");
+    return;
+  }
+  revealPosition(p,null);
+}
+function revealPosition(p,who){
   card.className="card pos";
   $("#posTag").textContent=(state.mode===2?"Ambos":"Todos");
-  $("#positionText").innerHTML=`${p.n}<span class="pos-desc">${p.d}</span>`;
+  const d=who?p.d.replace(/\{quien\}/g,`<span class="target">${who}</span>`):p.d;
+  $("#positionText").innerHTML=`${p.n}<span class="pos-desc">${d}</span>`;
   posPoints=2;
   const ptr=$("#posTimerRow");ptr.innerHTML="";
-  ptr.appendChild(makePosBtn(30,2));
-  ptr.appendChild(makePosBtn(60,3));
+  ptr.appendChild(makeRetoTimerBtn(15));
   showFace(positionFace);
   show(cardView);
   requestAnimationFrame(()=>card.classList.add("lit"));
 }
-function makePosBtn(sec,pts){
-  const b=document.createElement("button");b.className="tbtn";
-  b.innerHTML=`${sec} s · <b>${pts} puntos c/u</b>`;
-  b.addEventListener("click",()=>{posPoints=pts;startTimer(sec,$("#posTimerRow"));});
-  return b;
-}
 function completePosition(){
-  for(let i=0;i<state.mode;i++) state.scores[i]+=posPoints; // todos suman
+  for(let i=0;i<state.mode;i++) state.scores[i]+=posPoints; // todos suman (2)
   renderScore();
   let w=-1,best=-1;
   for(let i=0;i<state.mode;i++) if(state.scores[i]>=WIN_SCORE && state.scores[i]>best){best=state.scores[i];w=i;}
@@ -853,9 +894,7 @@ function revealCard(type,lvl,txt,partner){
   $("#promptText").innerHTML=filled;
   const tr=$("#timerRow");tr.innerHTML="";
   if(type==="reto"){
-    retoPoints=1;
-    tr.appendChild(makePointsBtn(15,1));
-    tr.appendChild(makePointsBtn(30,3));
+    tr.appendChild(makeRetoTimerBtn(15));
   }
   show(cardView);
   showFace(revealFace);
@@ -878,47 +917,54 @@ $("#optReto").addEventListener("click",()=>deal("reto"));
 /* ---------- BOTELLA: elegir pareja ---------- */
 const bottleSpin=$("#bottleSpin"),bottleBtn=$("#bottleBtn");
 let bottleRot=0,bottleTimer=null,pendingReto=null,dealtType="reto",retoPoints=1,posPoints=2;
-function buildSpinner(spinEl,indices){
+function buildSpinner(spinEl,opts,allLabel){
   spinEl.style.transition="none";spinEl.style.transform="rotate(0deg)";
-  const n=indices.length,seg=360/n,R=96,cx=100,cy=100;
+  const n=opts.length,seg=360/n,R=96,cx=100,cy=100;
   const svg=document.createElementNS(NS,"svg");
   svg.setAttribute("viewBox","0 0 200 200");svg.classList.add("wheel");
-  indices.forEach((pi,idx)=>{
+  opts.forEach((pi,idx)=>{
+    const isAll=(pi==="ALL");
     const a0=idx*seg,a1=(idx+1)*seg,mid=a0+seg/2;
     const path=document.createElementNS(NS,"path");
     path.setAttribute("d",slicePath(cx,cy,R,a0,a1));
-    path.setAttribute("fill",PALETTE[pi]);path.setAttribute("fill-opacity","0.92");
+    path.setAttribute("fill",isAll?"#e6b873":PALETTE[pi]);path.setAttribute("fill-opacity",isAll?"1":"0.92");
     path.setAttribute("stroke","rgba(20,10,18,.55)");path.setAttribute("stroke-width","1.2");
     svg.appendChild(path);
     const lp=pol(cx,cy,R*0.6,mid);
     const t=document.createElementNS(NS,"text");
     t.setAttribute("x",lp.x.toFixed(1));t.setAttribute("y",lp.y.toFixed(1));
     t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","middle");
-    t.setAttribute("class","wlabel");t.textContent=nameOf(pi);
+    t.setAttribute("class","wlabel");t.textContent=isAll?allLabel:nameOf(pi);
     svg.appendChild(t);
     const sp=pol(cx,cy,R*0.82,mid);
     const sym=document.createElementNS(NS,"text");
     sym.setAttribute("x",sp.x.toFixed(1));sym.setAttribute("y",sp.y.toFixed(1));
     sym.setAttribute("text-anchor","middle");sym.setAttribute("dominant-baseline","middle");
-    sym.setAttribute("class","wsym");sym.textContent=state.sex[pi]==="h"?"♂":"♀";
+    sym.setAttribute("class","wsym");sym.textContent=isAll?"❤":(state.sex[pi]==="h"?"♂":"♀");
     svg.appendChild(sym);
   });
   spinEl.innerHTML="";spinEl.appendChild(svg);
   void spinEl.offsetWidth;spinEl.style.transition="";
 }
 function startBottle(type,lvl,txt,cands){
-  pendingReto={type,lvl,txt,cands};
+  const allLabel=cands.length===2?"Ambos":"Todos";
+  startSpin({opts:[...cands,"ALL"],allLabel,forText:nameOf(state.turn)+", gira para tu pareja",
+    label:"Gira para elegir pareja",resWord:isAll=>isAll?"Te toca con":"Tu pareja es",
+    onDone:(nm)=>revealCard(type,lvl,txt,nm)});
+}
+function startSpin(cfg){
+  pendingReto=cfg;
   bottleRot=0;
-  $("#bottleFor").textContent=nameOf(state.turn)+", gira para tu pareja";
-  $("#bottleLbl").textContent="Gira para elegir pareja";
+  $("#bottleFor").textContent=cfg.forText||"";
+  $("#bottleLbl").textContent=cfg.label||"Gira para elegir";
   $("#bottleRes").innerHTML="&nbsp;";
   bottleBtn.disabled=false;
-  buildSpinner(bottleSpin,cands);
+  buildSpinner(bottleSpin,cfg.opts,cfg.allLabel||"");
   show(bottleView);
 }
 bottleBtn.addEventListener("click",()=>{
   bottleBtn.disabled=true;
-  const cands=pendingReto.cands,n=cands.length,seg=360/n;
+  const cfg=pendingReto,opts=cfg.opts,n=opts.length,seg=360/n;
   const pos=Math.floor(Math.random()*n);
   const center=pos*seg+seg/2;
   const pad=Math.min(16,seg*0.28);
@@ -932,15 +978,18 @@ bottleBtn.addEventListener("click",()=>{
   const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   clearTimeout(bottleTimer);
   bottleTimer=setTimeout(()=>{
-    const nm=nameOf(cands[pos]);
-    $("#bottleLbl").textContent="Tu pareja es";
-    $("#bottleRes").textContent=nm;
-    setTimeout(()=>revealCard(pendingReto.type,pendingReto.lvl,pendingReto.txt,nm),700);
+    const sel=opts[pos];
+    const isAll=(sel==="ALL");
+    const shown=isAll?cfg.allLabel:nameOf(sel);
+    const nm=isAll?cfg.allLabel.toLowerCase():nameOf(sel);
+    $("#bottleLbl").textContent=cfg.resWord?cfg.resWord(isAll):"Elegido";
+    $("#bottleRes").textContent=shown;
+    setTimeout(()=>cfg.onDone(nm,isAll,sel),700);
   }, reduce?1500:3950);
 });
 
 function complete(){
-  state.scores[state.turn]+=(dealtType==="verdad"?2:retoPoints);
+  state.scores[state.turn]+=(dealtType==="verdad"?2:1);
   renderScore();
   if(state.scores[state.turn]>=WIN_SCORE) showWin(state.turn);
   else backToWheel();
@@ -965,6 +1014,9 @@ function showWin(i){
     wrap.appendChild(el);
   }
   show(winView);
+  const canAdvance=!state.levels.includes("picante");
+  $("#winDecide").style.display=canAdvance?"block":"none";
+  $("#toPicanteBtn").style.display=canAdvance?"inline-block":"none";
 }
 function surrender(){
   stopTimer();
@@ -986,13 +1038,28 @@ $("#surrenderBtn").addEventListener("click",surrender);
 $("#penDoneBtn").addEventListener("click",backToWheel);
 
 /* ---------------- TIMER ---------------- */
-let timerInt=null,timerEl=null;
-function makePointsBtn(sec,pts){
+let timerInt=null,timerEl=null,bigTimer=null;
+function makeRetoTimerBtn(sec){
   const b=document.createElement("button");b.className="tbtn";
-  b.innerHTML=`${sec} s · <b>${pts} ${pts===1?"punto":"puntos"}</b>`;
-  b.addEventListener("click",()=>{retoPoints=pts;startTimer(sec);});
+  b.innerHTML=`▶ ${sec} s`;
+  b.addEventListener("click",()=>startBigCountdown(sec));
   return b;
 }
+function startBigCountdown(sec){
+  const ov=$("#countdownOverlay"),num=$("#countNum");
+  clearInterval(bigTimer);
+  let left=sec;
+  num.textContent=left;
+  ov.classList.add("show");
+  bump(num);
+  bigTimer=setInterval(()=>{
+    left--;
+    if(left<0){clearInterval(bigTimer);bigTimer=null;ov.classList.remove("show");return;}
+    num.textContent=left;bump(num);
+    if(left===0){chime();setTimeout(()=>ov.classList.remove("show"),650);clearInterval(bigTimer);bigTimer=null;}
+  },1000);
+}
+function bump(el){el.style.animation="none";void el.offsetWidth;el.style.animation="countpulse .5s ease";}
 function startTimer(sec,container){
   stopTimer();const tr=container||$("#timerRow");tr.innerHTML="";
   timerEl=document.createElement("div");timerEl.className="tcount";tr.appendChild(timerEl);
